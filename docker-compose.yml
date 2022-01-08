@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+
+  db:
+    image: mysql:5.7
+    container_name: php_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: 'db'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      - "3306:3306"
+  
+  php_app:
+    build:
+      context: .
+      dockerfile: Dockerfile.php
+    container_name: php_application
+    depends_on:
+      - db
+    volumes:
+      - ./:/app/
+    # ports:
+    #   - "8100:80"

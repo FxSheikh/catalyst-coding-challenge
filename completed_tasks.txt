@@ -1,0 +1,2 @@
+1. Setup of Github Repository
+2. Setup of Docker Environment  
