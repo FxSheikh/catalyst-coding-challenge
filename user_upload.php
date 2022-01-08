@@ -1,6 +1,39 @@
 <?php
-    echo 'test';
+    echo "-------------------------------\n";
     
+    // Declaring variables that we need to run the script
+    $file_name = NULL;
+    $mysql_username = NULL;
+    $mysql_password = NULL;
+    $mysql_host = NULL;
+    
+    // Declaring short and long options to get from command line
+    $shortopts  = "" . "u:" . "p:" . "h:";   
+    $longopts  = array("file::", "create_table", "dry_run",);
+    
+    $passed_options = getopt($shortopts, $longopts);
+    // var_dump($passed_options);
+    
+    if (isset($passed_options['file'])) {
+        $file_name = $passed_options['file'];
+        // echo $file_name;
+    }
+ 
+    if (isset($passed_options['u'])) {
+        $mysql_username = $passed_options['u'];
+        // echo $mysql_username;
+    }
+    
+    if (isset($passed_options['p'])) {
+        $mysql_password = $passed_options['p'];
+        // echo $mysql_password;
+    }    
+
+    if (isset($passed_options['h'])) {
+        $mysql_password = $passed_options['h'];
+        // echo $mysql_host;
+    } 
+
     function printDirectives() {
         echo "The following command line options (directives) are available:\n";
         echo "--------------------------------------------------------------\n";
@@ -14,5 +47,9 @@
         echo "--help – which will output the above list of directives with details.\n";
     }
 
-    // printDirectives();
+    // If the first argument is --help then print the directives
+    if (in_array($argv[1], array('--help'))){
+        printDirectives();
+    }     
+   
 ?>

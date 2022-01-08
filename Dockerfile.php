@@ -1,10 +1,20 @@
-FROM php:7.2-cli
+FROM php:7.2-apache
 
-COPY ./ /app
-WORKDIR /app
+RUN useradd faizan
 
-RUN apt-get update && apt-get install -y default-mysql-client
 RUN docker-php-ext-install mysqli
-# RUN docker-php-ext-enable mysqli
 
-CMD [ "php", "user_upload.php" ]
+RUN chown faizan:faizan /var/www/html
+
+USER faizan
+
+WORKDIR /var/www/html
+
+# Copy application source
+COPY ./ /var/www/html/
+
+USER root
+
+RUN chmod -R 755 /var/www/html/
+
+EXPOSE 8080
