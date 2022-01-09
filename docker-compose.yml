@@ -2,17 +2,18 @@ version: '3'
 
 services:
 
-  # db:
-  #   image: mysql:5.7
-  #   container_name: php_db
-  #   restart: unless-stopped
-  #   environment:
-  #     MYSQL_DATABASE: 'db'
-  #     MYSQL_USER: 'user'
-  #     MYSQL_PASSWORD: 'password'
-  #     MYSQL_ROOT_PASSWORD: 'password'
-  #   ports:
-  #     - "3306:3306"
+  # MySQL Database Service
+  db:
+    image: mysql:5.7
+    container_name: php_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: 'db' # Create this database on startup
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      - "3306:3306"
   
   # PHP Apache Service
   phpapp:
@@ -23,3 +24,15 @@ services:
     restart: unless-stopped
     volumes:
       - ./:/var/www/html/
+
+  # PHP MyAdmin Service
+  phpmyadmin:
+    depends_on:
+      - db
+    image: phpmyadmin
+    restart: unless-stopped
+    ports:
+      - '8000:80'
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: password       

@@ -1,12 +1,40 @@
 <?php
     echo "-------------------------------\n";
-    
+
     // Declaring variables that we need to run the script
     $file_name = NULL;
     $mysql_username = NULL;
     $mysql_password = NULL;
-    $mysql_host = NULL;
+    $mysql_host = NULL; // servername
+    $dry_run_active = false;
+    $create_table_active = false;
     
+    // Creating a class to help manage database operations
+    class DataStorage{
+        private $connection;
+        private $user; 
+        private $host;
+        private $password;
+        private $database_name; 
+      
+        private $result = array();
+        private $number_rows;
+        
+        public function __construct($host,$username,$password){
+          $this->host = $host;
+          $this->user = $username;
+          $this->password = $password;
+          $this->database_name = 'db';
+          
+          $this->connection = new mysqli($this->host,$this->user,$this->password);
+          // Check connection
+          if ($this->connection->connect_error) {  
+            die("Connection failed: " . $this->connection->connect_error . "\n");
+          }
+          echo "Connected successfully to the database server \n";         
+        }
+    }
+
     // Declaring short and long options to get from command line
     $shortopts  = "" . "u:" . "p:" . "h:";   
     $longopts  = array("file::", "create_table", "dry_run",);
@@ -16,22 +44,32 @@
     
     if (isset($passed_options['file'])) {
         $file_name = $passed_options['file'];
-        // echo $file_name;
+        echo "Filename is " . $file_name . "\n";
     }
  
+    if (isset($passed_options['create_table'])) {
+        $create_table_active = true;
+        echo "Create table active is " . $create_table_active . "\n";
+    } 
+
+    if (isset($passed_options['dry_run'])) {
+        $dry_run_active = true;
+        echo "Dry run active is " . $dry_run_active . "\n";
+    } 
+
     if (isset($passed_options['u'])) {
         $mysql_username = $passed_options['u'];
-        // echo $mysql_username;
+        echo "Username is " . $mysql_username . "\n";
     }
     
     if (isset($passed_options['p'])) {
         $mysql_password = $passed_options['p'];
-        // echo $mysql_password;
+        echo "Password is " . $mysql_password . "\n";
     }    
 
     if (isset($passed_options['h'])) {
-        $mysql_password = $passed_options['h'];
-        // echo $mysql_host;
+        $mysql_host = $passed_options['h'];
+        echo "Host is " . $mysql_host . "\n";
     } 
 
     function printDirectives() {
@@ -51,5 +89,10 @@
     if (in_array($argv[1], array('--help'))){
         printDirectives();
     }     
-   
+    
+    // If create table option passed and all of the database credentials create a connection to the database
+    if ($create_table_active and ($mysql_host and $mysql_username and $mysql_password)) {
+        // Create a new connection to the database
+        $conn = new Datastorage($mysql_host,$mysql_username,$mysql_password);
+    } 
 ?>
