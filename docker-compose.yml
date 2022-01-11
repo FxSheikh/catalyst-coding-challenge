@@ -4,14 +4,18 @@ services:
 
   # MySQL Database Service
   db:
-    image: mysql:5.7
+    build:
+      context: .
+      dockerfile: Dockerfile.sql
+    # image: mysql:5.7
     container_name: php_db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: 'db' # Create this database on startup
+      MYSQL_DATABASE: 'users_database' # Create this database on startup
       MYSQL_USER: 'user'
       MYSQL_PASSWORD: 'password'
       MYSQL_ROOT_PASSWORD: 'password'
+      # MYSQL_ROOT_HOST: "%"
     ports:
       - "3306:3306"
   

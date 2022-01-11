@@ -17,4 +17,4 @@ USER root
 
 RUN chmod -R 755 /var/www/html/
 
-EXPOSE 8080
+EXPOSE 8080 

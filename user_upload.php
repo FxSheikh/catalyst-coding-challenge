@@ -1,14 +1,17 @@
 <?php
-    echo "-------------------------------\n";
+    // echo "-------------------------------\n";
 
     // Declaring variables that we need to run the script
     $file_name = NULL;
-    $mysql_username = NULL;
-    $mysql_password = NULL;
-    $mysql_host = NULL; // servername
+    $mysql_username = 'user';
+    $mysql_password = 'password';
+    $mysql_host = 'db'; // servername
     $dry_run_active = false;
     $create_table_active = false;
     
+    // Catch exceptions on mysqli extension and allow mysqli to throw exceptions
+    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
     // Creating a class to help manage database operations
     class DataStorage{
         private $connection;
@@ -24,14 +27,33 @@
           $this->host = $host;
           $this->user = $username;
           $this->password = $password;
-          $this->database_name = 'db';
+          $this->database_name = 'users_database';
           
-          $this->connection = new mysqli($this->host,$this->user,$this->password);
-          // Check connection
-          if ($this->connection->connect_error) {  
-            die("Connection failed: " . $this->connection->connect_error . "\n");
+          try {
+              $this->connection = new mysqli($host,$username,$password);
+              echo "Successfully connected to the database server \n";
+              echo "-------------------------------\n";
+          } catch (Exception $e) {
+              echo "Connection error, please make sure the database credentials are correct \n";
+              echo "-------------------------------\n";
           }
-          echo "Connected successfully to the database server \n";         
+    }  
+
+        public function createDB() {
+            
+            // Create database if it doesn't exist, only root user can do this
+            $sql_query = "CREATE DATABASE IF NOT EXISTS $this->database_name";
+            if ($this->connection->query($sql_query) === TRUE) {
+                echo "Database created successfully \n";
+                echo "-------------------------------\n";
+            } else {
+                echo "Error creating database: " . $this->connection->error . "\n";
+                echo "-------------------------------\n";
+            }
+        }
+
+        public function emptyArray(){
+            $this->result = array();
         }
     }
 
@@ -89,10 +111,7 @@
     if (in_array($argv[1], array('--help'))){
         printDirectives();
     }     
-    
-    // If create table option passed and all of the database credentials create a connection to the database
-    if ($create_table_active and ($mysql_host and $mysql_username and $mysql_password)) {
-        // Create a new connection to the database
-        $conn = new Datastorage($mysql_host,$mysql_username,$mysql_password);
-    } 
+
+    $conn = new Datastorage($mysql_host,$mysql_username,$mysql_password);
+    $conn->createDB();
 ?>

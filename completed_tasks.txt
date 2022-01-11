@@ -1,3 +1,4 @@
 1. Setup of Github Repository
 2. Setup of Docker Environment
-3. Parsing command line inputs  
+3. Parsing command line inputs 
+4. Connecting to database 
