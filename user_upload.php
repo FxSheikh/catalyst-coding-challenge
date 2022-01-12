@@ -41,8 +41,15 @@
           $this->database_name = 'users_database';
           
           try {
+
+              @$this->connection = new mysqli($host,$username,$password);
+              
+              // Create the database if it doesn't exist ('users_database');
+              $this->createDB();
+
               $this->connection = new mysqli($host,$username,$password,$this->database_name);
               $this->connection_status = true;
+              echo "----------------------------------------------\n";
               echo "Successfully connected to the database server \n";
               echo "----------------------------------------------\n";
           } catch (Exception $e) {
@@ -50,6 +57,22 @@
               echo "----------------------------------------------\n";
           }
         }  
+
+        // Method to create the database if it doesn't exist
+        public function createDB() {
+
+            // Create database if it doesn't exist, only root user can do this
+            $sql_query = "CREATE DATABASE IF NOT EXISTS $this->database_name;";
+
+            if ($this->connection->query($sql_query) === TRUE) {
+                echo "Database created successfully \n";
+                echo "----------------------------------------------\n";
+
+            } else {
+                echo "Error creating database: " . $this->connection->error . "\n";
+                echo "----------------------------------------------\n";
+            }
+        }
 
         // Method to create the users table
         public function createTable($sql_query) {
@@ -72,46 +95,46 @@
           
               echo "The file $filename exists and is successfully opened\n";
               
-              # Skip reading of the first line because it is only headers
+              // Skip reading of the first line because it is only headers
               fgetcsv($file);
       
               # Using a loop to iterate through the data
               while (($data = fgetcsv($file)) !== FALSE) {
   
-                  # $[data][0] is name, $[data][1] is surname, $[data][2] is email from the csv file
-                  # using trim to remove whitespaces from left and right side of the string
+                  // $[data][0] is name, $[data][1] is surname, $[data][2] is email from the csv file
+                  // Using trim to remove whitespaces from left and right side of the string
                   $first_name = trim($data[0]);
                   $surname = trim($data[1]);
                   $email = trim($data[2]);
                   
                   echo "First name is $first_name, Surname is $surname and email is $email \n";
   
-                  #validate email before inserting into database, if invalid then no insert and report error to output                
+                  // Validate email before inserting into database, if invalid then no insert and report error to output                
                   if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                       echo "The email address $email for $first_name $surname is invalid, this row will not be inserted into the database \n";
                       continue;   
                   }
   
-                  # validate first name using regex before inserting into database, if invalid then no insert and report error to output
+                  // Validate first name using regex before inserting into database, if invalid then no insert and report error to output
                   if (!preg_match("/^[a-zA-Z'. -]+$/",$first_name)) {  
                       echo "The firstname for $first_name $surname is invalid (only a-z A-Z ' . - and whitespace allowed), this row will not be inserted into the database \n";
                       continue;
                   }
                    
-                  # validate surname using regex before inserting into database, if invalid then no insert and report error to output
+                  // Validate surname using regex before inserting into database, if invalid then no insert and report error to output
                   if (!preg_match("/^[a-zA-Z'. -]+$/",$surname)) {  
                       echo "The surname for $first_name $surname is invalid (only a-z A-Z ' . - and whitespace allowed), this row will not be inserted into the database \n";
                       continue;
                   }                
   
-                  #name and surname needs to be capitalised before being inserted into db
+                  // First name and surname needs to be capitalised before being inserted into db
                   $first_name = ucfirst(strtolower($first_name));
                   $surname = ucfirst(strtolower($surname));
   
-                  #email needs to be set to lowercase before being inserted into db
+                  // Email needs to be set to lowercase before being inserted into db
                   $email = strtolower($email);
   
-                  #final array to be pushed into the results array
+                  // Final array to be pushed into the results array
                   $final_array = array($first_name,$surname,$email);
                   
                   array_push($results_array,$final_array); 
@@ -180,12 +203,13 @@
 
     // Declaring short and long options to get from command line
     $shortopts  = "" . "u:" . "p:" . "h:";   
-    $longopts  = array("file::", "create_table", "dry_run",);
+    $longopts  = array("file::", "create_table", "dry_run", "help");
     
     $passed_options = getopt($shortopts, $longopts);
     // var_dump($passed_options);
     
     if (isset($passed_options['file'])) {
+        $file_active = true;
         $file_name = $passed_options['file'];
         echo "Filename is " . $file_name . "\n";
     }
@@ -205,6 +229,11 @@
         echo "Username is " . $mysql_username . "\n";
     }
     
+    if (isset($passed_options['help'])) {
+        $help_active = true;
+        echo "Help active is " . $help_active . "\n";
+    }    
+    
     if (isset($passed_options['p'])) {
         $mysql_password = $passed_options['p'];
         echo "Password is " . $mysql_password . "\n";
@@ -217,9 +246,10 @@
 
     // Function for printing the directives if --help directive is set
     function printDirectives() {
+        echo "--------------------------------------------------------------\n";
         echo "The following command line options (directives) are available:\n";
         echo "--------------------------------------------------------------\n";
-        echo "--file [csv file name] –> this is the name of the CSV to be parsed.\n";
+        echo "--file=[csv file name] – this is the name of the CSV to be parsed.\n";
         echo "--create_table – this will cause the MySQL users table to be built (and no further action will be taken).\n";
         echo "--dry_run – this will be used with the --file directive in case we want to run the script but not insert into the DB.\n";
         echo "All other functions will be executed, but the database won't be altered.\n";
@@ -229,36 +259,38 @@
         echo "--help – which will output the above list of directives with details.\n";
     }
 
-    // If the first argument is --help then print the directives
-    if (in_array($argv[1], array('--help'))){
-        printDirectives();
-    }     
-
-    $conn = new Datastorage($mysql_host,$mysql_username,$mysql_password);
-    if ($conn->getConnectionStatus() == true){
-        // $conn->createDB();
-        $conn->createTable($create_query);
-        $results_arr = $conn->readCSV($file_name);
-        $conn->insertData($results_arr);
+    // Function for printing to the user that a dry run is being performed
+    function printDryRun() {
+        echo "------------------------------------------------------------------------\n";
+        echo "The following is a Dry Run, the Database will not be altered in any way:\n";
+        echo "------------------------------------------------------------------------\n";        
     }
  
-    // Create table, file with create, file with dry run, file by itself, else clause
+    $conn = new Datastorage($mysql_host,$mysql_username,$mysql_password);
+    if ($conn->getConnectionStatus() == true){
 
-    /* Method to create the database [this is not required]
-    $this->connection = new mysqli($host,$username,$password);
-    $sql_query2 = "CREATE DATABASE IF NOT EXISTS $this->database_name;";
-    $this->connection->query($sql_query2);
-    public function createDB() {
-        // Create database if it doesn't exist, only root user can do this
-        $sql_query = "CREATE DATABASE IF NOT EXISTS $this->database_name;";
-
-        if ($this->connection->query($sql_query) === TRUE) {
-            echo "Database created successfully \n";
-            echo "----------------------------------------------\n";
-
-        } else {
-            echo "Error creating database: " . $this->connection->error . "\n";
-            echo "----------------------------------------------\n";
+        // The main cases required in the program file with dry run, file (same as file and create), create, help, and else clause
+        if ($file_active and $dry_run_active){
+            printDryRun();
+            $results_arr = $conn->readCSV($file_name);
         }
-    } */
+        else if ($file_active){
+            // Insert data using the filename, call create table first to make sure the users table is created
+            $conn->createTable($create_query);
+            $results_arr = $conn->readCSV($file_name);
+            $conn->insertData($results_arr);        
+        }
+        else if ($create_table_active) {
+            $conn->createTable($create_query);
+        }
+        else if ($help_active) {
+            printDirectives();
+        }
+        else {
+            echo "The option(s) chosen were invalid, to view the list please use the --help command \n";       
+        }
+    } else {
+        echo "There was a connection error, please check the database credentials and try again \n";
+    }
+
 ?>
