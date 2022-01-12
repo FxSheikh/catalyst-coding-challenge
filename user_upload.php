@@ -1,5 +1,5 @@
 <?php
-    // echo "-------------------------------\n";
+    echo "----------------------------------------------\n";
 
     // Declaring variables that we need to run the script
     $file_name = "";
@@ -8,6 +8,8 @@
     $mysql_host = 'db'; // servername
     $dry_run_active = false;
     $create_table_active = false;
+    $dry_run_active = false;
+    $file_active = false;
     
     // Declaring the create table sql query that will be needed
     $create_query = "CREATE TABLE IF NOT EXISTS users(
@@ -29,7 +31,6 @@
         private $password;
         private $database_name; 
         private $result = array();
-        private $number_rows;
         private $connection_status = false;
 
         // Constructor function for the DataStorage class used to create a database connection
@@ -40,12 +41,7 @@
           $this->database_name = 'users_database';
           
           try {
-              $this->connection = new mysqli($host,$username,$password);
-              $sql_query2 = "CREATE DATABASE IF NOT EXISTS $this->database_name;";
-              
-              $this->connection->query($sql_query2);
               $this->connection = new mysqli($host,$username,$password,$this->database_name);
-              
               $this->connection_status = true;
               echo "Successfully connected to the database server \n";
               echo "----------------------------------------------\n";
@@ -55,30 +51,14 @@
           }
         }  
 
-        // Method to create the database [this is not required]
-        public function createDB() {
-            
-            // Create database if it doesn't exist, only root user can do this
-            $sql_query = "CREATE DATABASE IF NOT EXISTS $this->database_name;";
-
-            if ($this->connection->query($sql_query) === TRUE) {
-                echo "Database created successfully \n";
-                echo "----------------------------------------------\n";
-
-            } else {
-                echo "Error creating database: " . $this->connection->error . "\n";
-                echo "----------------------------------------------\n";
-            }
-        }
-
         // Method to create the users table
-        public function createTable($SQL) {
+        public function createTable($sql_query) {
             try {
-                mysqli_query($this->connection, $SQL);
+                mysqli_query($this->connection, $sql_query);
                 echo "The users table was succesfully created \n";
                 echo "----------------------------------------------\n";
             } catch (mysqli_sql_exception $e) {
-                echo "There was an error in the query statement, please verify it. \n";
+                echo "There was an error in the query statement, The users table could not be created \n";
                 echo "----------------------------------------------\n";
             }
         }
@@ -154,10 +134,10 @@
       }
 
       // Method for inserting the data from the csv file into the users table
-      public function insertData($arr) {
+      public function insertData($data_array) {
         
         $this->emptyArray();
-        $this->result = $arr;
+        $this->result = $data_array;
 
         foreach ($this->result as $array){
             echo "----------------------------------------------\n";
@@ -256,12 +236,29 @@
 
     $conn = new Datastorage($mysql_host,$mysql_username,$mysql_password);
     if ($conn->getConnectionStatus() == true){
-        $conn->createDB();
+        // $conn->createDB();
         $conn->createTable($create_query);
-        $arr = $conn->readCSV($file_name);
-        $conn->insertData($arr);
+        $results_arr = $conn->readCSV($file_name);
+        $conn->insertData($results_arr);
     }
  
     // Create table, file with create, file with dry run, file by itself, else clause
 
+    /* Method to create the database [this is not required]
+    $this->connection = new mysqli($host,$username,$password);
+    $sql_query2 = "CREATE DATABASE IF NOT EXISTS $this->database_name;";
+    $this->connection->query($sql_query2);
+    public function createDB() {
+        // Create database if it doesn't exist, only root user can do this
+        $sql_query = "CREATE DATABASE IF NOT EXISTS $this->database_name;";
+
+        if ($this->connection->query($sql_query) === TRUE) {
+            echo "Database created successfully \n";
+            echo "----------------------------------------------\n";
+
+        } else {
+            echo "Error creating database: " . $this->connection->error . "\n";
+            echo "----------------------------------------------\n";
+        }
+    } */
 ?>
