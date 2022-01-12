@@ -1,4 +1,6 @@
 1. Setup of Github Repository
 2. Setup of Docker Environment
 3. Parsing command line inputs 
-4. Connecting to database 
+4. Connecting to database
+5. Reading data from the csv file 
+6. Inserting data into the users table
