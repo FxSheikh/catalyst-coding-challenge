@@ -2,13 +2,22 @@
     // echo "-------------------------------\n";
 
     // Declaring variables that we need to run the script
-    $file_name = NULL;
+    $file_name = "";
     $mysql_username = 'user';
     $mysql_password = 'password';
     $mysql_host = 'db'; // servername
     $dry_run_active = false;
     $create_table_active = false;
     
+    // Declaring the create table sql query that will be needed
+    $create_query = "CREATE TABLE IF NOT EXISTS users(
+        ID INT NOT NULL AUTO_INCREMENT,
+        FirstName VARCHAR(50) NOT NULL,
+        LastName VARCHAR(50) NOT NULL,
+        Email VARCHAR(50) NOT NULL,
+        UNIQUE KEY email_uniq (Email),
+        PRIMARY KEY (`ID`));";  
+
     // Catch exceptions on mysqli extension and allow mysqli to throw exceptions
     mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
@@ -19,7 +28,6 @@
         private $host;
         private $password;
         private $database_name; 
-      
         private $result = array();
         private $number_rows;
         
@@ -30,28 +38,113 @@
           $this->database_name = 'users_database';
           
           try {
+              
               $this->connection = new mysqli($host,$username,$password);
+              $sql_query2 = "CREATE DATABASE IF NOT EXISTS $this->database_name;";
+              
+              $this->connection->query($sql_query2);
+              $this->connection = new mysqli($host,$username,$password,$this->database_name);
+              
               echo "Successfully connected to the database server \n";
-              echo "-------------------------------\n";
+              echo "----------------------------------------------\n";
           } catch (Exception $e) {
               echo "Connection error, please make sure the database credentials are correct \n";
-              echo "-------------------------------\n";
+              echo "----------------------------------------------\n";
           }
     }  
 
         public function createDB() {
             
             // Create database if it doesn't exist, only root user can do this
-            $sql_query = "CREATE DATABASE IF NOT EXISTS $this->database_name";
+            $sql_query = "CREATE DATABASE IF NOT EXISTS $this->database_name;";
+
             if ($this->connection->query($sql_query) === TRUE) {
                 echo "Database created successfully \n";
-                echo "-------------------------------\n";
+                echo "----------------------------------------------\n";
+
             } else {
                 echo "Error creating database: " . $this->connection->error . "\n";
-                echo "-------------------------------\n";
+                echo "----------------------------------------------\n";
             }
         }
 
+        public function createTable($SQL) {
+            try {
+                $this->result = mysqli_query($this->connection, $SQL);
+                echo "The users table was succesfully created \n";
+                echo "----------------------------------------------\n";
+            } catch (mysqli_sql_exception $e) {
+                echo "There was an error in the query statement, please verify it. \n";
+                echo "----------------------------------------------\n";
+            }
+        }
+
+        public function readCSV($filename) {
+
+          $results_array = [];
+  
+          if (file_exists($filename) and ($file = fopen($filename, "r"))!==false ) {
+          
+              echo "The file $filename exists and is successfully opened\n";
+              
+              # Skip reading of the first line because it is only headers
+              fgetcsv($file);
+      
+              # Using a loop to iterate through the data
+              while (($data = fgetcsv($file)) !== FALSE) {
+  
+                  # $[data][0] is name, $[data][1] is surname, $[data][2] is email from the csv file
+                  # using trim to remove whitespaces from left and right side of the string
+                  $first_name = trim($data[0]);
+                  $surname = trim($data[1]);
+                  $email = trim($data[2]);
+                  
+                  echo "First name is $first_name, Surname is $surname and email is $email \n";
+  
+                  #validate email before inserting into database, if invalid then no insert and report error to output                
+                  if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                      echo "The email address $email for $first_name $surname is invalid, this row will not be inserted into the database \n";
+                      continue;   
+                  }
+  
+                  # validate first name using regex before inserting into database, if invalid then no insert and report error to output
+                  if (!preg_match("/^[a-zA-Z'. -]+$/",$first_name)) {  
+                      echo "The firstname for $first_name $surname is invalid (only a-z A-Z ' . - and whitespace allowed), this row will not be inserted into the database \n";
+                      continue;
+                  }
+                   
+                  # validate surname using regex before inserting into database, if invalid then no insert and report error to output
+                  if (!preg_match("/^[a-zA-Z'. -]+$/",$surname)) {  
+                      echo "The surname for $first_name $surname is invalid (only a-z A-Z ' . - and whitespace allowed), this row will not be inserted into the database \n";
+                      continue;
+                  }                
+  
+                  #name and surname needs to be capitalised before being inserted into db
+                  $first_name = ucfirst(strtolower($first_name));
+                  $surname = ucfirst(strtolower($surname));
+  
+                  #email needs to be set to lowercase before being inserted into db
+                  $email = strtolower($email);
+  
+                  #final array to be pushed into the results array
+                  $final_array = array($first_name,$surname,$email);
+                  
+                  array_push($results_array,$final_array); 
+              }
+      
+              # Close the csv file
+              fclose($file);
+          } 
+          
+          else {
+              echo "The file $filename does not exist \n";
+          }
+  
+          // Return the results array
+          return $results_array;
+  
+      }
+        
         public function emptyArray(){
             $this->result = array();
         }
@@ -114,4 +207,11 @@
 
     $conn = new Datastorage($mysql_host,$mysql_username,$mysql_password);
     $conn->createDB();
+    $conn->createTable($create_query);
+    $conn->readCSV($file_name);
+
+    //create table with message 
+    // inserting from csv file into the table
+    // Create table, file with create, file with dry run, file by itself, else clause
+
 ?>
