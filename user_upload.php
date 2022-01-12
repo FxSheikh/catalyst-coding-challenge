@@ -30,7 +30,9 @@
         private $database_name; 
         private $result = array();
         private $number_rows;
-        
+        private $connection_status = false;
+
+        // Constructor function for the DataStorage class used to create a database connection
         public function __construct($host,$username,$password){
           $this->host = $host;
           $this->user = $username;
@@ -38,21 +40,22 @@
           $this->database_name = 'users_database';
           
           try {
-              
               $this->connection = new mysqli($host,$username,$password);
               $sql_query2 = "CREATE DATABASE IF NOT EXISTS $this->database_name;";
               
               $this->connection->query($sql_query2);
               $this->connection = new mysqli($host,$username,$password,$this->database_name);
               
+              $this->connection_status = true;
               echo "Successfully connected to the database server \n";
               echo "----------------------------------------------\n";
           } catch (Exception $e) {
               echo "Connection error, please make sure the database credentials are correct \n";
               echo "----------------------------------------------\n";
           }
-    }  
+        }  
 
+        // Method to create the database [this is not required]
         public function createDB() {
             
             // Create database if it doesn't exist, only root user can do this
@@ -68,9 +71,10 @@
             }
         }
 
+        // Method to create the users table
         public function createTable($SQL) {
             try {
-                $this->result = mysqli_query($this->connection, $SQL);
+                mysqli_query($this->connection, $SQL);
                 echo "The users table was succesfully created \n";
                 echo "----------------------------------------------\n";
             } catch (mysqli_sql_exception $e) {
@@ -79,6 +83,7 @@
             }
         }
 
+        // Method for reading the contents of the csv file
         public function readCSV($filename) {
 
           $results_array = [];
@@ -139,14 +144,57 @@
           else {
               echo "The file $filename does not exist \n";
           }
-  
+          
+          // Save the results in our class results variable
+          $this->result = $results_array;
+
           // Return the results array
           return $results_array;
   
       }
+
+      // Method for inserting the data from the csv file into the users table
+      public function insertData($arr) {
         
+        $this->emptyArray();
+        $this->result = $arr;
+
+        foreach ($this->result as $array){
+            echo "----------------------------------------------\n";
+            print_r($array);
+
+            // echo $first_name; echo $surname; echo $email;
+
+            try {
+                // Using prepared statements and bound parameters for extra security
+                $stmt = $this->connection->prepare("INSERT INTO users (firstname, lastname, email) VALUES (?, ?, ?)");
+                $stmt->bind_param("sss", $first_name, $surname, $email);
+                $first_name = $array[0]; $surname = $array[1]; $email = $array[2];
+                $stmt->execute();                
+                echo "The row for $first_name $surname was succesfully inserted into the users table. \n";
+                echo "----------------------------------------------\n";
+
+            } catch (mysqli_sql_exception $e) {
+                if (strpos($e, 'Duplicate entry') !== false) {
+                    echo "This email already exists. This row will not be inserted into the users table \n";
+                    echo "----------------------------------------------\n";
+                }
+                else {
+                    echo "Sorry an error occurred. This row will not be inserted into the users table. \n";
+                    echo "----------------------------------------------\n";
+                }
+            }
+        }
+      } 
+        
+      // Method to empty the class array
         public function emptyArray(){
             $this->result = array();
+        }
+
+        // Method for returning the connection status of the user
+        public function getConnectionStatus(){
+            return $this->connection_status;
         }
     }
 
@@ -187,6 +235,7 @@
         echo "Host is " . $mysql_host . "\n";
     } 
 
+    // Function for printing the directives if --help directive is set
     function printDirectives() {
         echo "The following command line options (directives) are available:\n";
         echo "--------------------------------------------------------------\n";
@@ -206,12 +255,13 @@
     }     
 
     $conn = new Datastorage($mysql_host,$mysql_username,$mysql_password);
-    $conn->createDB();
-    $conn->createTable($create_query);
-    $conn->readCSV($file_name);
-
-    //create table with message 
-    // inserting from csv file into the table
+    if ($conn->getConnectionStatus() == true){
+        $conn->createDB();
+        $conn->createTable($create_query);
+        $arr = $conn->readCSV($file_name);
+        $conn->insertData($arr);
+    }
+ 
     // Create table, file with create, file with dry run, file by itself, else clause
 
 ?>
