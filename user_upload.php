@@ -291,7 +291,7 @@
             }
             
             else {
-                echo "The option(s) chosen were invalid, to view the list please use the --help command \n";       
+                echo "To view the list of options please use the --help command \n";       
             }
             
     } else {
