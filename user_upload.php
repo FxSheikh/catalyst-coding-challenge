@@ -45,11 +45,11 @@
               @$this->connection = new mysqli($host,$username,$password);
               
               // Create the database if it doesn't exist ('users_database');
-              $this->createDB();
+              $this->checkDataBase();
 
+              // Connect to the database
               $this->connection = new mysqli($host,$username,$password,$this->database_name);
               $this->connection_status = true;
-              echo "----------------------------------------------\n";
               echo "Successfully connected to the database server \n";
               echo "----------------------------------------------\n";
           } catch (Exception $e) {
@@ -59,19 +59,34 @@
         }  
 
         // Method to create the database if it doesn't exist
-        public function createDB() {
+        public function checkDataBase() {
 
-            // Create database if it doesn't exist, only root user can do this
-            $sql_query = "CREATE DATABASE IF NOT EXISTS $this->database_name;";
-
-            if ($this->connection->query($sql_query) === TRUE) {
-                echo "Database created successfully \n";
-                echo "----------------------------------------------\n";
-
+            $show_query = "SHOW DATABASES LIKE '$this->database_name'";
+            $query_result = $this->connection->query($show_query);
+            $dataresult = $query_result->fetch_array();
+            // print_r($dataresult);
+            
+            // If array not empty this  means that the database already exists
+            if ($dataresult) {
+                echo "-------------------------------------------------\n";
+                echo "The database $this->database_name already exists \n";
+        
+            // Otherwise we need to create the database because it doesn't exist
             } else {
-                echo "Error creating database: " . $this->connection->error . "\n";
-                echo "----------------------------------------------\n";
-            }
+                echo "Creating the database \n";
+
+                // Create database if it doesn't exist, only user with priviliges can do this
+                $sql_query = "CREATE DATABASE IF NOT EXISTS $this->database_name;";
+
+                if ($this->connection->query($sql_query) === TRUE) {
+                    echo "Database created successfully \n";
+                    echo "----------------------------------------------\n";
+
+                } else {
+                    echo "Error creating database: " . $this->connection->error . "\n";
+                    echo "----------------------------------------------\n";
+                }
+            }            
         }
 
         // Method to create the users table
@@ -296,6 +311,9 @@
             
     } else {
         echo "There was a connection error, please check the database credentials and try again \n";
+        echo "Please also make sure you have sufficient database priviliges \n";
     }
 
 ?>
+
+
