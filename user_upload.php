@@ -268,27 +268,32 @@
  
     $conn = new Datastorage($mysql_host,$mysql_username,$mysql_password);
     if ($conn->getConnectionStatus() == true){
-
+            
         // The main cases required in the program file with dry run, file (same as file and create), create, help, and else clause
-        if ($file_active and $dry_run_active){
-            printDryRun();
-            $results_arr = $conn->readCSV($file_name);
-        }
-        else if ($file_active){
-            // Insert data using the filename, call create table first to make sure the users table is created
-            $conn->createTable($create_query);
-            $results_arr = $conn->readCSV($file_name);
-            $conn->insertData($results_arr);        
-        }
-        else if ($create_table_active) {
-            $conn->createTable($create_query);
-        }
-        else if ($help_active) {
-            printDirectives();
-        }
-        else {
-            echo "The option(s) chosen were invalid, to view the list please use the --help command \n";       
-        }
+            if ($file_active and $dry_run_active){
+                printDryRun();
+                $results_arr = $conn->readCSV($file_name);
+            }
+            
+            else if ($file_active){
+                // Insert data using the filename, call create table first to make sure the users table is created
+                $conn->createTable($create_query);
+                $results_arr = $conn->readCSV($file_name);
+                $conn->insertData($results_arr);        
+            }
+            
+            else if ($create_table_active) {
+                $conn->createTable($create_query);
+            }
+            
+            else if ($help_active) {
+                printDirectives();
+            }
+            
+            else {
+                echo "The option(s) chosen were invalid, to view the list please use the --help command \n";       
+            }
+            
     } else {
         echo "There was a connection error, please check the database credentials and try again \n";
     }
