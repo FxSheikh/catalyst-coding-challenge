@@ -1,6 +1,6 @@
-# catalyst-coding-challenge
+# php-command-line-challenge
 
-Catalyst Coding Project
+PHP Command Line Coding Project
 
 ### Note
 
